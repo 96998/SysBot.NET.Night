@@ -64,22 +64,36 @@ namespace SysBot.Pokemon.Dodo
             var eventBody = input.Data.EventBody;
             if (!string.IsNullOrWhiteSpace(_channelId) && eventBody.ChannelId != _channelId) return;
 
+            // Check if the message body is a file
             if (eventBody.MessageBody is MessageBodyFile messageBodyFile)
             {
-                if (!FileTradeHelper<TP>.ValidFileSize(messageBodyFile.Size ?? 0) || !FileTradeHelper<TP>.ValidFileName(messageBodyFile.Name))
+                // Validate the file size and name
+                if (!FileTradeHelper<TP>.ValidFileSize(messageBodyFile.Size ?? 0) ||
+                    !FileTradeHelper<TP>.ValidFileName(messageBodyFile.Name))
                 {
+                    // If the file is invalid, withdraw the process and send a message indicating the file is illegal
                     ProcessWithdraw(eventBody.MessageId);
                     DodoBot<TP>.SendChannelMessage("非法文件", eventBody.ChannelId);
                     return;
                 }
+
+                // Create a new HttpClient instance
                 using var client = new HttpClient();
-                var downloadBytes = client.GetByteArrayAsync(messageBodyFile.Url).Result;
-                var pkms = FileTradeHelper<TP>.Bin2List(downloadBytes);
+                // Download the file and convert it to a byte array
+                var downloadBytes = client.GetByteArrayAsync(messageBodyFile.Url).Result; // 将下载的bin文件转换成byte数组
+                // Convert the byte array to a list of PKM objects
+                var pkms = FileTradeHelper<TP>.Bin2List(downloadBytes); // 将bin文件转换成对应版本的PKM list
+                // Withdraw the process
                 ProcessWithdraw(eventBody.MessageId);
-                if (pkms.Count == 1) 
-                    new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId, eventBody.IslandSourceId).StartTradePKM(pkms[0]);
-                else if (pkms.Count > 1 && pkms.Count <= FileTradeHelper<TP>.MaxCountInBin) 
-                    new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId, eventBody.IslandSourceId).StartTradeMultiPKM(pkms);
+                // If there is only one PKM object in the list, start a single trade
+                if (pkms.Count == 1)
+                    new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName,
+                        eventBody.ChannelId, eventBody.IslandSourceId).StartTradePKM(pkms[0]);
+                // If there are multiple PKM objects in the list and the count is within the maximum limit, start a multi-trade
+                else if (pkms.Count > 1 && pkms.Count <= FileTradeHelper<TP>.MaxCountInBin)
+                    new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName,
+                        eventBody.ChannelId, eventBody.IslandSourceId).StartTradeMultiPKM(pkms);
+                // If the file content is incorrect, send a message indicating the file content is incorrect
                 else
                     DodoBot<TP>.SendChannelMessage("文件内容不正确", eventBody.ChannelId);
                 return;
@@ -94,31 +108,37 @@ namespace SysBot.Pokemon.Dodo
             {
                 _botDodoSourceId = _openApiService.GetBotInfo(new GetBotInfoInput()).DodoSourceId;
             }
+
             if (!content.Contains($"<@!{_botDodoSourceId}>")) return;
 
             content = content.Substring(content.IndexOf('>') + 1);
-            if (typeof(TP) == typeof(PK9) && content.Contains("\n\n") && ShowdownTranslator<TP>.IsPS(content))// 仅SV支持批量，其他偷懒还没写
+            if (typeof(TP) == typeof(PK9) && content.Contains("\n\n") &&
+                ShowdownTranslator<TP>.IsPS(content)) // 仅SV支持批量，其他偷懒还没写
             {
                 ProcessWithdraw(eventBody.MessageId);
-                new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId, eventBody.IslandSourceId).StartTradeMultiPs(content.Trim());
+                new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId,
+                    eventBody.IslandSourceId).StartTradeMultiPs(content.Trim());
                 return;
             }
             else if (ShowdownTranslator<TP>.IsPS(content))
             {
                 ProcessWithdraw(eventBody.MessageId);
-                new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId, eventBody.IslandSourceId).StartTradePs(content.Trim());
+                new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId,
+                    eventBody.IslandSourceId).StartTradePs(content.Trim());
                 return;
             }
             else if (content.Trim().StartsWith("dump"))
             {
                 ProcessWithdraw(eventBody.MessageId);
-                new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId, eventBody.IslandSourceId).StartDump();
+                new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId,
+                    eventBody.IslandSourceId).StartDump();
                 return;
             }
-            else if (typeof(TP) == typeof(PK9) && content.Trim().Contains('+'))// 仅SV支持批量，其他偷懒还没写
+            else if (typeof(TP) == typeof(PK9) && content.Trim().Contains('+')) // 仅SV支持批量，其他偷懒还没写
             {
                 ProcessWithdraw(eventBody.MessageId);
-                new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId, eventBody.IslandSourceId).StartTradeMultiChinesePs(content.Trim());
+                new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId,
+                    eventBody.IslandSourceId).StartTradeMultiChinesePs(content.Trim());
                 return;
             }
 
@@ -127,12 +147,14 @@ namespace SysBot.Pokemon.Dodo
             {
                 LogUtil.LogInfo($"收到命令\n{ps}", LogIdentity);
                 ProcessWithdraw(eventBody.MessageId);
-                new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId, eventBody.IslandSourceId).StartTradePs(ps);
+                new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId,
+                    eventBody.IslandSourceId).StartTradePs(ps);
             }
             else if (content.Contains("取消"))
             {
                 var result = DodoBot<TP>.Info.ClearTrade(ulong.Parse(eventBody.DodoSourceId));
-                DodoBot<TP>.SendChannelAtMessage(ulong.Parse(eventBody.DodoSourceId), $" {GetClearTradeMessage(result)}",
+                DodoBot<TP>.SendChannelAtMessage(ulong.Parse(eventBody.DodoSourceId),
+                    $" {GetClearTradeMessage(result)}",
                     eventBody.ChannelId);
             }
             else if (content.Contains("位置"))
@@ -174,8 +196,9 @@ namespace SysBot.Pokemon.Dodo
         {
             if (_dodoSettings.WithdrawTradeMessage)
             {
-                DodoBot<TP>.OpenApiService.SetChannelMessageWithdraw(new SetChannelMessageWithdrawInput() { MessageId = messageId }, true);
-            }  
+                DodoBot<TP>.OpenApiService.SetChannelMessageWithdraw(
+                    new SetChannelMessageWithdrawInput() { MessageId = messageId }, true);
+            }
         }
 
         public override void MessageReactionEvent(
@@ -183,6 +206,5 @@ namespace SysBot.Pokemon.Dodo
         {
             // Do nothing
         }
-
     }
 }

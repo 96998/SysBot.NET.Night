@@ -16,8 +16,8 @@ namespace SysBot.Pokemon.Helpers
     /// <typeparam name="T"></typeparam>
     public abstract class AbstractTrade<T> where T : PKM, new()
     {
-        public abstract void SendMessage(string message);//完善此方法以实现发送消息功能
-        public abstract IPokeTradeNotifier<T> GetPokeTradeNotifier(T pkm, int code);//完善此方法以实现消息通知功能
+        public abstract void SendMessage(string message); //完善此方法以实现发送消息功能
+        public abstract IPokeTradeNotifier<T> GetPokeTradeNotifier(T pkm, int code); //完善此方法以实现消息通知功能
         protected PokeTradeTrainerInfo userInfo = default!;
         private TradeQueueInfo<T> queueInfo = default!;
 
@@ -39,15 +39,18 @@ namespace SysBot.Pokemon.Helpers
                 SendMessage(msg);
                 return;
             }
+
             var foreign = ps.Contains("Language: ");
             StartTradeWithoutCheck(pkm, foreign);
         }
+
         public void StartTradeChinesePs(string chinesePs)
         {
             var ps = ShowdownTranslator<T>.Chinese2Showdown(chinesePs);
             LogUtil.LogInfo($"中文转换后ps代码:\n{ps}", nameof(AbstractTrade<T>));
             StartTradePs(ps);
         }
+
         public void StartTradePKM(T pkm)
         {
             var _ = CheckPkm(pkm, out var msg);
@@ -59,12 +62,14 @@ namespace SysBot.Pokemon.Helpers
 
             StartTradeWithoutCheck(pkm);
         }
+
         public void StartTradeMultiPs(string pss)
         {
             var psList = pss.Split("\n\n").ToList();
             if (!JudgeMultiNum(psList.Count)) return;
 
-            var pkms = GetPKMsFromPsList(psList, isChinesePS: false, out int invalidCount, out List<bool> skipAutoOTList);
+            var pkms = GetPKMsFromPsList(psList, isChinesePS: false, out int invalidCount,
+                out List<bool> skipAutoOTList);
 
             if (!JudgeInvalidCount(invalidCount, psList.Count)) return;
 
@@ -89,36 +94,53 @@ namespace SysBot.Pokemon.Helpers
             SendMessage(message);
         }
 
+        /// <summary>
+        /// Starts a multi-trade process with a list of PKM objects.
+        /// </summary>
+        /// <param name="rawPkms">The list of raw PKM objects to be traded.</param>
         public void StartTradeMultiPKM(List<T> rawPkms)
         {
+            // Check if the number of PKM objects is within the allowed limit for a multi-trade
             if (!JudgeMultiNum(rawPkms.Count)) return;
 
+            // Initialize a list to store the valid PKM objects and a list to store the skipAutoOT flags
             List<T> pkms = new();
             List<bool> skipAutoOTList = new();
+            // Initialize a counter for the number of invalid PKM objects
             int invalidCount = 0;
+            // Loop through the raw PKM objects
             for (var i = 0; i < rawPkms.Count; i++)
             {
+                // Check if the current PKM object is valid
                 var _ = CheckPkm(rawPkms[i], out var msg);
                 if (!_)
                 {
+                    // If the PKM object is invalid, log a message and increment the invalid counter
                     LogUtil.LogInfo($"批量第{i + 1}只宝可梦有问题:{msg}", nameof(AbstractTrade<T>));
                     invalidCount++;
                 }
                 else
                 {
-                    LogUtil.LogInfo($"批量第{i + 1}只:{GameInfo.GetStrings("zh").Species[rawPkms[i].Species]}", nameof(AbstractTrade<T>));
+                    // If the PKM object is valid, log a message, add a false flag to the skipAutoOT list, and add the PKM object to the valid list
+                    LogUtil.LogInfo($"批量第{i + 1}只:{GameInfo.GetStrings("zh").Species[rawPkms[i].Species]}",
+                        nameof(AbstractTrade<T>));
                     skipAutoOTList.Add(false);
                     pkms.Add(rawPkms[i]);
                 }
             }
 
+            // Check if the number of invalid PKM objects is within the allowed limit
             if (!JudgeInvalidCount(invalidCount, rawPkms.Count)) return;
 
+            // Generate a random trade code
             var code = queueInfo.GetRandomTradeCode();
+            // Add the valid PKM objects to the trade queue
             var __ = AddToTradeQueue(pkms, code, skipAutoOTList,
                 PokeRoutineType.LinkTrade, out string message);
+            // Send a message to notify the user about the trade
             SendMessage(message);
         }
+
         /// <summary>
         /// 根据pokemon showdown代码生成对应版本的PKM文件
         /// </summary>
@@ -127,7 +149,8 @@ namespace SysBot.Pokemon.Helpers
         /// <param name="invalidCount">不合法的宝可梦数量</param>
         /// <param name="skipAutoOTList">需要跳过自id的列表</param>
         /// <returns></returns>
-        private List<T> GetPKMsFromPsList(List<string> psList, bool isChinesePS, out int invalidCount, out List<bool> skipAutoOTList)
+        private List<T> GetPKMsFromPsList(List<string> psList, bool isChinesePS, out int invalidCount,
+            out List<bool> skipAutoOTList)
         {
             List<T> pkms = new();
             skipAutoOTList = new List<bool>();
@@ -148,8 +171,10 @@ namespace SysBot.Pokemon.Helpers
                     pkms.Add(pkm);
                 }
             }
+
             return pkms;
         }
+
         /// <summary>
         /// 判断是否符合批量规则
         /// </summary>
@@ -168,8 +193,10 @@ namespace SysBot.Pokemon.Helpers
                 SendMessage($"批量交换宝可梦数量应小于等于{maxPkmsPerTrade}");
                 return false;
             }
+
             return true;
         }
+
         /// <summary>
         /// 判断无效数量
         /// </summary>
@@ -187,6 +214,7 @@ namespace SysBot.Pokemon.Helpers
             {
                 SendMessage($"期望交换的{totalCount}只宝可梦中，有{invalidCount}只不合法，仅交换合法的{totalCount - invalidCount}只");
             }
+
             return true;
         }
 
@@ -215,6 +243,7 @@ namespace SysBot.Pokemon.Helpers
                     msg = $"取消派送, 官方禁止该宝可梦交易!";
                     return false;
                 }
+
                 if (pkm is T pk)
                 {
                     var la = new LegalityAnalysis(pkm);
@@ -224,8 +253,10 @@ namespace SysBot.Pokemon.Helpers
                         msg = $"已加入等待队列. 如果你选宝可梦的速度太慢，你的派送请求将被取消!";
                         return true;
                     }
+
                     LogUtil.LogInfo($"非法原因:\n{la.Report()}", nameof(AbstractTrade<T>));
                 }
+
                 LogUtil.LogInfo($"pkm type:{pkm.GetType()}, T:{typeof(T)}", nameof(AbstractTrade<T>));
                 var reason = "我没办法创造非法宝可梦";
                 msg = $"{reason}";
@@ -235,8 +266,10 @@ namespace SysBot.Pokemon.Helpers
                 LogUtil.LogSafe(ex, nameof(AbstractTrade<T>));
                 msg = $"取消派送, 发生了一个错误";
             }
+
             return false;
         }
+
         public bool CheckPkm(T pkm, out string msg)
         {
             if (!queueInfo.GetCanQueue())
@@ -244,6 +277,7 @@ namespace SysBot.Pokemon.Helpers
                 msg = "对不起, 我不再接受队列请求!";
                 return false;
             }
+
             return Check(pkm, out msg);
         }
 
@@ -294,7 +328,8 @@ namespace SysBot.Pokemon.Helpers
 
         private static void GenerationFix(ITrainerInfo sav)
         {
-            if (typeof(T) == typeof(PK8) || typeof(T) == typeof(PB8) || typeof(T) == typeof(PA8)) sav.GetType().GetProperty("Generation")?.SetValue(sav, 8);
+            if (typeof(T) == typeof(PK8) || typeof(T) == typeof(PB8) || typeof(T) == typeof(PA8))
+                sav.GetType().GetProperty("Generation")?.SetValue(sav, 8);
         }
 
         private bool AddToTradeQueue(T pk, int code, bool skipAutoOT,
@@ -311,6 +346,7 @@ namespace SysBot.Pokemon.Helpers
                 msg = $"宝可梦数据为空";
                 return false;
             }
+
             T pk = pks.First();
             var trainer = userInfo;
             var notifier = GetPokeTradeNotifier(pk, code);
@@ -324,6 +360,7 @@ namespace SysBot.Pokemon.Helpers
             {
                 detail.Context.Add("batch", pks);
             }
+
             var trade = new TradeEntry<T>(detail, userInfo.ID, type, userInfo.TrainerName);
 
             var added = queueInfo.AddToTradeQueue(trade, userInfo.ID, false);
@@ -442,6 +479,5 @@ namespace SysBot.Pokemon.Helpers
             pk.SetSuggestedHyperTrainingData();
             pk.SetSuggestedRibbons(template, enc, true);
         }
-
     }
 }
