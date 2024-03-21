@@ -88,6 +88,7 @@ objects, the returned list will be empty.
 
 SysBot.Pokemon/Helpers/AbstractTrade.cs
 
+### StartTradeMultiPKM
 ```csharp
         public void StartTradeMultiPKM(List<T> rawPkms)
         {
@@ -193,5 +194,9 @@ If all checks pass, the method generates a random trade code (`var code = queueI
 valid `PKM` objects to the trade
 queue (`var __ = AddToTradeQueue(pkms, code, skipAutoOTList, PokeRoutineType.LinkTrade, out string message);`), and
 sends a message to notify the user about the trade (`SendMessage(message);`).
+
+
+### StratTradeMultiPKMWithoutCheck
+
 
 

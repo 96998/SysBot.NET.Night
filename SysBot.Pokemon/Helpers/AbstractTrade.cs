@@ -142,6 +142,51 @@ namespace SysBot.Pokemon.Helpers
         }
 
         /// <summary>
+        /// Starts a multi-trade process with a list of PKM objects without checking the validity of the PKM objects.
+        /// </summary>
+        /// <param name="rawPkms">The list of raw PKM objects to be traded.</param>
+        /// Author: Alexander Jiajiason
+        /*
+         * This method starts a multi-trade process with a list of PKM objects without checking the validity of the PKM objects.
+         * 批量交换时不检测宝可梦的合法性
+         * 这个是基于管理员已经检查过了，所以直接交换，不适用于普通用户以及对外开放的机器人
+         */
+        public void StartTradeMultiPKMWithoutCheck(List<T> rawPkms)
+        {
+            if (!JudgeMultiNum(rawPkms.Count)) return;
+
+            List<T> pkms = new();
+            List<bool> skipAutoOTList = new();
+            LogUtil.LogInfo($"StartTradeMultiPKMWithoutCheck",nameof(AbstractTrade<T>));
+            // int invalidCount = 0;
+            for (var i = 0; i < rawPkms.Count; i++)
+            {
+                LogUtil.LogInfo($"批量第{i + 1}只:{GameInfo.GetStrings("zh").Species[rawPkms[i].Species]}", nameof(AbstractTrade<T>));
+                skipAutoOTList.Add(false);
+                pkms.Add(rawPkms[i]);
+                // var _ = CheckPkm(rawPkms[i], out var msg);
+                // if (!_)
+                // {
+                //     LogUtil.LogInfo($"批量第{i + 1}只宝可梦有问题:{msg}", nameof(AbstractTrade<T>));
+                //     invalidCount++;
+                // }
+                // else
+                // {
+                //     LogUtil.LogInfo($"批量第{i + 1}只:{GameInfo.GetStrings("zh").Species[rawPkms[i].Species]}", nameof(AbstractTrade<T>));
+                //     skipAutoOTList.Add(false);
+                //     pkms.Add(rawPkms[i]);
+                // }
+            }
+
+            // if (!JudgeInvalidCount(invalidCount, rawPkms.Count)) return;
+
+            var code = queueInfo.GetRandomTradeCode();
+            var __ = AddToTradeQueue(pkms, code, skipAutoOTList,
+                PokeRoutineType.LinkTrade, out string message);
+            SendMessage(message);
+        }
+
+        /// <summary>
         /// 根据pokemon showdown代码生成对应版本的PKM文件
         /// </summary>
         /// <param name="psList">ps代码</param>

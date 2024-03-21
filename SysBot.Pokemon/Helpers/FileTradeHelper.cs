@@ -12,13 +12,13 @@ namespace SysBot.Pokemon.Helpers
     public class FileTradeHelper<T> where T : PKM, new()
     {
         /// <summary>
-        /// 将bin文件转换成对应版本的PKM list
-        /// 读取的是bin文件转化而成的byte数组
+        /// 将二进制文件(箱子bin文件以及不同版本的PKM文件)转换成对应版本的PKM list
+        /// 读取的是二进制件转化而成的byte数组
         /// </summary>
         /// <param name="bb"></param>
         /// <returns></returns>
         /// <summary>
-        /// Converts a byte array from a .bin file to a list of PKM objects.
+        /// Converts a byte array from a bin file to a list of PKM objects.
         /// </summary>
         /// <param name="bb">The byte array to convert.</param>
         /// <returns>A list of PKM objects.</returns>

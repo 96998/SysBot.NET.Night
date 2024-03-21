@@ -30,6 +30,10 @@ SysBot.Pokemon/Settings/TradeSettings.cs
 
 
 
+### 合法性校验相关权限
+
+
+
 
 
 

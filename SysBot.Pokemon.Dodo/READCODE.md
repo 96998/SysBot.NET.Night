@@ -1,5 +1,7 @@
 ﻿# PokemonProcessService.cs
 
+机器人交易策略以及与用户交互，分析处理接收到的信息以及文件
+
 SysBot.Pokemon.Dodo/PokemonProcessService.cs
 
 ```csharp
