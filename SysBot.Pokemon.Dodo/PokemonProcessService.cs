@@ -15,9 +15,13 @@ namespace SysBot.Pokemon.Dodo
     public class PokemonProcessService<TP> : EventProcessService where TP : PKM, new()
     {
         private readonly OpenApiService _openApiService;
+
         private static readonly string LogIdentity = "DodoBot";
+
         // private static readonly string Welcome = "at我并尝试对我说：\n皮卡丘\nps代码\n或者直接拖一个文件进来";
-        private static readonly string Welcome = "宝可梦想佳机器人为您服务\nat我并尝试对我说：\n皮卡丘\nps代码\n或者直接拖一个文件进来\n中文指令请看在线文件:https://docs.qq.com/doc/DVWdQdXJPWllabm5t?&u=1c5a2618155548239a9563e9f22a57c0";
+        private static readonly string Welcome =
+            "宝可梦想佳机器人为您服务\nat我并尝试对我说：\n皮卡丘\nps代码\n或者直接拖一个文件进来\n中文指令请看在线文件:https://docs.qq.com/doc/DVWdQdXJPWllabm5t?&u=1c5a2618155548239a9563e9f22a57c0";
+
         private readonly string _channelId;
         private DodoSettings _dodoSettings;
         private string _botDodoSourceId = default!;
@@ -83,7 +87,8 @@ namespace SysBot.Pokemon.Dodo
                 // Create a new HttpClient instance
                 using var client = new HttpClient();
                 // Download the file and convert it to a byte array
-                var downloadBytes = client.GetByteArrayAsync(messageBodyFile.Url).Result; // 将下载的二进制文件(不同版本的PKM文件或者是箱子文件bin)转换成byte数组
+                var downloadBytes =
+                    client.GetByteArrayAsync(messageBodyFile.Url).Result; // 将下载的二进制文件(不同版本的PKM文件或者是箱子文件bin)转换成byte数组
                 // Convert the byte array to a list of PKM objects
                 var pkms = FileTradeHelper<TP>.Bin2List(downloadBytes); // 将二进制文件(不同版本的PKM文件或者是箱子文件bin)转换成对应版本的PKM list
                 // Withdraw the process
@@ -125,6 +130,12 @@ namespace SysBot.Pokemon.Dodo
 
             if (eventBody.MessageBody is not MessageBodyText messageBodyText) return;
 
+            /**
+             * Get the content of the message(获取消息的内容)
+             * Author:Alexander Jiajiason
+             * Date:2024/03/28
+             * 文本指令交换
+             */
             var content = messageBodyText.Content;
 
             LogUtil.LogInfo($"{eventBody.Personal.NickName}({eventBody.DodoSourceId}):{content}", LogIdentity);
@@ -151,7 +162,7 @@ namespace SysBot.Pokemon.Dodo
                     eventBody.IslandSourceId).StartTradePs(content.Trim());
                 return;
             }
-            else if (content.Trim().StartsWith("dump"))
+            else if (content.Trim().StartsWith("dump") || content.Trim().StartsWith("检测")) // 检测
             {
                 ProcessWithdraw(eventBody.MessageId);
                 new DodoTrade<TP>(ulong.Parse(eventBody.DodoSourceId), eventBody.Personal.NickName, eventBody.ChannelId,
@@ -225,16 +236,20 @@ namespace SysBot.Pokemon.Dodo
             }
         }
 
-       /**
-        * Set the mute time for a member
-        * @param islandSourceId The island ID(群ID)
-        * @param dodoSourceId The Dodo ID(DodoID)
-        * @param duration The duration of the mute in seconds, up to 7 days(禁言时长（秒），最长7天)
-        * @param reason The reason for the mute(禁言理由)
-        */
+        /**
+         * Set the mute time for a member
+         * @param islandSourceId The island ID(群ID)
+         * @param dodoSourceId The Dodo ID(DodoID)
+         * @param duration The duration of the mute in seconds, up to 7 days(禁言时长（秒），最长7天)
+         * @param reason The reason for the mute(禁言理由)
+         */
         public void MemberMuteAdd(string islandSourceId, string dodoSourceId, int duration, string reason = "")
         {
-            DodoBot<TP>.OpenApiService.SetMemberMuteAdd(new SetMemberMuteAddInput() { IslandSourceId = islandSourceId, DodoSourceId = dodoSourceId, Duration = duration, Reason = reason }, true);
+            DodoBot<TP>.OpenApiService.SetMemberMuteAdd(
+                new SetMemberMuteAddInput()
+                {
+                    IslandSourceId = islandSourceId, DodoSourceId = dodoSourceId, Duration = duration, Reason = reason
+                }, true);
         }
 
         public override void MessageReactionEvent(
