@@ -3,6 +3,7 @@ using System.Net.Http;
 using DoDo.Open.Sdk.Models.Bots;
 using DoDo.Open.Sdk.Models.ChannelMessages;
 using DoDo.Open.Sdk.Models.Events;
+using DoDo.Open.Sdk.Models.Members;
 using DoDo.Open.Sdk.Models.Messages;
 using DoDo.Open.Sdk.Services;
 using PKHeX.Core;
@@ -15,7 +16,8 @@ namespace SysBot.Pokemon.Dodo
     {
         private readonly OpenApiService _openApiService;
         private static readonly string LogIdentity = "DodoBot";
-        private static readonly string Welcome = "at我并尝试对我说：\n皮卡丘\nps代码\n或者直接拖一个文件进来";
+        // private static readonly string Welcome = "at我并尝试对我说：\n皮卡丘\nps代码\n或者直接拖一个文件进来";
+        private static readonly string Welcome = "宝可梦想佳机器人为您服务\nat我并尝试对我说：\n皮卡丘\nps代码\n或者直接拖一个文件进来\n中文指令请看在线文件:https://docs.qq.com/doc/DVWdQdXJPWllabm5t?&u=1c5a2618155548239a9563e9f22a57c0";
         private readonly string _channelId;
         private DodoSettings _dodoSettings;
         private string _botDodoSourceId = default!;
@@ -74,6 +76,7 @@ namespace SysBot.Pokemon.Dodo
                     // If the file is invalid, withdraw the process and send a message indicating the file is illegal
                     ProcessWithdraw(eventBody.MessageId);
                     DodoBot<TP>.SendChannelMessage("非法文件", eventBody.ChannelId);
+                    // MemberMuteAdd(eventBody.IslandSourceId, eventBody.DodoSourceId, 600, "使用非法文件,关你几分钟小黑屋QAQ");      // 设置禁言，群ID，DodoID，禁言时长，禁言理由
                     return;
                 }
 
@@ -220,6 +223,18 @@ namespace SysBot.Pokemon.Dodo
                 DodoBot<TP>.OpenApiService.SetChannelMessageWithdraw(
                     new SetChannelMessageWithdrawInput() { MessageId = messageId }, true);
             }
+        }
+
+       /**
+        * Set the mute time for a member
+        * @param islandSourceId The island ID(群ID)
+        * @param dodoSourceId The Dodo ID(DodoID)
+        * @param duration The duration of the mute in seconds, up to 7 days(禁言时长（秒），最长7天)
+        * @param reason The reason for the mute(禁言理由)
+        */
+        public void MemberMuteAdd(string islandSourceId, string dodoSourceId, int duration, string reason = "")
+        {
+            DodoBot<TP>.OpenApiService.SetMemberMuteAdd(new SetMemberMuteAddInput() { IslandSourceId = islandSourceId, DodoSourceId = dodoSourceId, Duration = duration, Reason = reason }, true);
         }
 
         public override void MessageReactionEvent(
