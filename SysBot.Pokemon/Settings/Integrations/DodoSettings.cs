@@ -8,7 +8,8 @@ namespace SysBot.Pokemon
     {
         private const string Startup = nameof(Startup);
 
-        public override string ToString() => "Dodo Integration Settings";
+        // public override string ToString() => "Dodo Integration Settings";
+        public override string ToString() => "Dodo整合设置";
 
         // Startup
 

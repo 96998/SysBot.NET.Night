@@ -13,11 +13,13 @@ namespace SysBot.Pokemon;
 public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
 {
     protected PokeDataOffsetsSV Offsets { get; } = new();
+
     protected PokeRoutineExecutor9SV(PokeBotState Config) : base(Config)
     {
     }
 
-    public override Task<PK9> ReadPokemon(ulong offset, CancellationToken token) => ReadPokemon(offset, BoxFormatSlotSize, token);
+    public override Task<PK9> ReadPokemon(ulong offset, CancellationToken token) =>
+        ReadPokemon(offset, BoxFormatSlotSize, token);
 
     public override async Task<PK9> ReadPokemon(ulong offset, int size, CancellationToken token)
     {
@@ -39,13 +41,38 @@ public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
         return !result.SequenceEqual(original);
     }
 
+    /// <summary>
+    /// Reads a Pokémon from a specific box and slot in the game.
+    /// </summary>
+    /// <param name="box">The box number from which the Pokémon should be read.</param>
+    /// <param name="slot">The slot number in the box from which the Pokémon should be read.</param>
+    /// <param name="token">A cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the Pokémon that was read.</returns>
+    /// <remarks>
+    /// This method is designed to read Pokémon from the first slot of the first box (box1slot1) only.
+    /// The slots in the game are not consecutive, so reading from other slots may not work as expected.
+    /// </remarks>
     public override Task<PK9> ReadBoxPokemon(int box, int slot, CancellationToken token)
     {
-        // Shouldn't be reading anything but box1slot1 here. Slots are not consecutive.
+        // Shouldn't be reading anything but box1slot1 here. Slots are not consecutive(连续的，不间断的).
+        // 不应该读取除box1slot1之外的任何内容。插槽不是连续的。
         var jumps = Offsets.BoxStartPokemonPointer.ToArray();
         return ReadPokemonPointer(jumps, BoxFormatSlotSize, token);
     }
 
+    /// <summary>
+    /// Sets a Pokémon in a specific box and slot in the game.
+    /// </summary>
+    /// <param name="offset">The offset in the game's memory where the Pokémon should be written.</param>
+    /// <param name="pkm">The Pokémon to be written to the game's memory.</param>
+    /// <param name="token">A cancellation token that can be used to cancel the operation.</param>
+    /// <param name="sav">Optional parameter. If provided, the Pokémon's handler data will be updated to match the current save's handler data.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <remarks>
+    /// This method writes the provided Pokémon to the specified offset in the game's memory.
+    /// If a save file is provided, the Pokémon's handler data is updated to match the handler data of the current save file.
+    /// The Pokémon's party stats are reset before it is written to the game's memory.
+    /// </remarks>
     public Task SetBoxPokemonAbsolute(ulong offset, PK9 pkm, CancellationToken token, ITrainerInfo? sav = null)
     {
         if (sav != null)
@@ -83,7 +110,8 @@ public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
         // Verify the game version.
         var game_version = await SwitchConnection.GetGameInfo("version", token).ConfigureAwait(false);
         if (!game_version.SequenceEqual(SVGameVersion))
-            throw new Exception($"Game version is not supported. Expected version {SVGameVersion}, and current game version is {game_version}.");
+            throw new Exception(
+                $"Game version is not supported. Expected version {SVGameVersion}, and current game version is {game_version}.");
 
         var sav = await GetFakeTrainerSAV(token).ConfigureAwait(false);
         InitSaveData(sav);
@@ -91,7 +119,8 @@ public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
         if (!IsValidTrainerData())
         {
             await CheckForRAMShiftingApps(token).ConfigureAwait(false);
-            throw new Exception("Refer to the SysBot.NET wiki (https://github.com/kwsch/SysBot.NET/wiki/Troubleshooting) for more information.");
+            throw new Exception(
+                "Refer to the SysBot.NET wiki (https://github.com/kwsch/SysBot.NET/wiki/Troubleshooting) for more information.");
         }
 
         if (await GetTextSpeed(token).ConfigureAwait(false) < TextSpeedOption.Fast)
@@ -104,7 +133,8 @@ public abstract class PokeRoutineExecutor9SV : PokeRoutineExecutor<PK9>
     {
         var sav = new SAV9SV();
         var info = sav.MyStatus;
-        var read = await SwitchConnection.PointerPeek(info.Data.Length, Offsets.MyStatusPointer, token).ConfigureAwait(false);
+        var read = await SwitchConnection.PointerPeek(info.Data.Length, Offsets.MyStatusPointer, token)
+            .ConfigureAwait(false);
         read.CopyTo(info.Data);
         return sav;
     }
